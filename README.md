@@ -2,7 +2,7 @@
 A javascript library to simplify webRTC based communication networks.
 
 ### Our Purpose
-The goal of this library is to provide a wrapper around webRTC optimized for communication between a large network of clients. 
+This library provides a wrapper around webRTC optimized for communication between a large network of clients. 
 
 ### Quick Start
 ```
