@@ -1,3 +1,5 @@
+STATUS: EARLY WIP
+
 # songbird
 A javascript library to simplify webRTC based communication networks.
 
