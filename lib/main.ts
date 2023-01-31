@@ -1,7 +1,6 @@
 import { Velox } from "./velox";
 
-export default (): Velox => {
+//export default (): Velox => {
     const velox = new Velox()
-
-    return velox
-}
+    //return velox
+//}

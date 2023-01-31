@@ -6,7 +6,7 @@ interface worm {
     Other?: string;
 }
 
-interface response {
+export interface NestResponse {
     UUID?: string;
     Type?: RecievableType;
     SDPOffer?: RTCSessionDescription;
@@ -35,22 +35,30 @@ enum RecievableType {
 export class Nest {
     private _ws: WebSocket;
     private _active: boolean = false;
+    readonly _sockAddr: string = "ws:127.0.0.1:8080/nest";
+    private _beacon: EventTarget = new EventTarget
 
-    constructor() {
 
-        this._ws = new WebSocket("ws:127.0.0.1:8080/nest");
+    constructor(sockAddr?: string) {
+
+        if (sockAddr !== undefined) {
+            this._sockAddr = sockAddr;
+        }
+
+        this._ws = new WebSocket(this._sockAddr);
 
         this._ws.onopen = () => {
             this._active = true;
-            console.log("opened");
+            console.log("opened connection to nest");
         };
 
         this._ws.onmessage = (event) => {
-            // messages to create connections should be emitted and handled by event handler
-            // so that there is no distinction in how peer MKC and server MKC is handled.
-            const message: response = JSON.parse(event.data);
-            console.log(message);
-            
+            const message: NestResponse = JSON.parse(event.data);
+
+            this._beacon.dispatchEvent(
+                new CustomEvent('recieved', { detail: message })
+            );
+
         };
 
         this._ws.onclose = () => {
@@ -60,12 +68,20 @@ export class Nest {
 
         this._ws.onerror = (event) => {
             console.log(event);
+            this._ws.close;
         };
 
+    }
+
+    isActive(): boolean {
+        return this._active;
     }
 
     send(data: worm): void {
         this._ws.send(JSON.stringify(data));
     }
 
+    addEventListener(type: string, callback: EventListenerOrEventListenerObject) {
+        this._beacon.addEventListener(type, callback)
+    }
 }
