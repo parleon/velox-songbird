@@ -10,9 +10,22 @@ export class Channel {
     private _dataChannel: RTCDataChannel;
     private _connectionId: number;
     private _peerUUID: string;
+    private _beacon: EventTarget = new EventTarget();
 
-    constructor() {
+    constructor(connId: number) {
+        this._connectionId = connId;
         
+        this._peerConnection = new RTCPeerConnection({
+            iceServers: [
+                {
+                    urls: "stun:stun.1.google.com:19302"
+                }
+            ]
+        });
+
+        this._dataChannel = this._peerConnection.createDataChannel("m");
     }
+
+
 
 }

@@ -1,21 +1,30 @@
-import { Nest, NestResponse } from "./nest";
+import { Channel } from "./channel";
+import { Nest, RecievableType } from "./nest";
 
 export class Velox {
 
     private _UUID: string;
     private _nest: Nest;
 
-    constructor() {
+    constructor(/* TODO: Add Velox options (including Nest, Channel options) */) {
 
-        this._nest = new Nest();
+        this._nest = new Nest(/* TODO: Add Nest options */);
 
-        const nestMessage = (event: CustomEvent) => {
-            const message: NestResponse = event.detail
+        this._nest.addNestMessageProcess('recieved', (message) => {
             console.log(message)
-        }
+            if (message.Type == RecievableType.Init) {
+                this._UUID = message.UUID
 
-        this._nest.addEventListener('recieved', nestMessage)
-        
+                /**
+                 * go through process of creating initial channel
+                 */
+                const chan = new Channel(0);
+
+            }
+        }
+        )
+
     };
+
 
 }

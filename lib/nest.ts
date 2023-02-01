@@ -22,7 +22,7 @@ enum SendableType {
     Update
 }
 
-enum RecievableType {
+export enum RecievableType {
     Init,
     Meta,
     Make,
@@ -36,7 +36,7 @@ export class Nest {
     private _ws: WebSocket;
     private _active: boolean = false;
     readonly _sockAddr: string = "ws:127.0.0.1:8080/nest";
-    private _beacon: EventTarget = new EventTarget
+    private _beacon: EventTarget = new EventTarget;
 
 
     constructor(sockAddr?: string) {
@@ -81,7 +81,12 @@ export class Nest {
         this._ws.send(JSON.stringify(data));
     }
 
-    addEventListener(type: string, callback: EventListenerOrEventListenerObject) {
-        this._beacon.addEventListener(type, callback)
+    // TODO: fix behavior to handle multiple types
+    addNestMessageProcess(type: string, callback: (message: NestResponse) => void) {
+        const eventCallback = (event: CustomEvent) => {
+            const message: NestResponse = event.detail
+            callback(message)
+        }
+        this._beacon.addEventListener(type, eventCallback)
     }
 }
