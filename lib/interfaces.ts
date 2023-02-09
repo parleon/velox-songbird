@@ -27,3 +27,11 @@ export enum SendableNestMessageType {
     Answer = "AN",
     ICE = "C"
 }
+
+export const MessageTypeMap = new Map<string, RecievableNestMessageType>([
+    ["IN", RecievableNestMessageType.Initial],
+    ["SH", RecievableNestMessageType.StartHandshake],
+    ["OF", RecievableNestMessageType.Offer],
+    ["AN", RecievableNestMessageType.Answer],
+    ["C", RecievableNestMessageType.ICE],
+]);

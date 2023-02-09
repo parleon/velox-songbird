@@ -1,7 +1,8 @@
 import { RecievableNestMessage,
          RecievableNestMessageType, 
          SendableNestMessage,
-         SendableNestMessageType} from "./interfaces";
+         SendableNestMessageType,
+         MessageTypeMap } from "./interfaces";
 
 /**
  * handles webRTC channel
@@ -33,9 +34,10 @@ export class Channel {
     }
 
     processNestMessage(event: CustomEvent) {
-        const message: RecievableNestMessage = event.detail
 
-        switch (message.Type) {
+        const message: RecievableNestMessage = event.detail
+        const mt = MessageTypeMap[message.Type]
+        switch (mt) {
             case RecievableNestMessageType.StartHandshake: {
                 this._peerUUID = message.UUID;
                 (async function make() {
@@ -94,7 +96,7 @@ export class Channel {
 
             }
             default: {
-                console.log(message)
+                console.log("Default Behavior")
             }
 
         }
