@@ -1,34 +1,5 @@
-interface worm {
-    UUID?: string;
-    Type?: SendableType;
-    SDPOffer?: RTCSessionDescription;
-    Candidate?: RTCIceCandidate;
-    Other?: string;
-}
-
-export interface NestResponse {
-    UUID?: string;
-    Type?: RecievableType;
-    SDPOffer?: RTCSessionDescription;
-    Meta?: string;
-    Other?: string;
-}
-
-enum SendableType {
-    Init,
-    Offering,
-    Accepting,
-    Rejection,
-    Update
-}
-
-export enum RecievableType {
-    Init,
-    Meta,
-    Make,
-    Accepted,
-}
-
+import { SendableNestMessage, RecievableNestMessage,
+         SendableNestMessageType, RecievableNestMessageType } from "./interfaces"
 /**
  * API to handle communication with Velox nest
  */
@@ -37,7 +8,7 @@ export class Nest {
     private _active: boolean = false;
     readonly _sockAddr: string = "ws:127.0.0.1:8080/nest";
     private _beacon: EventTarget = new EventTarget;
-
+        
 
     constructor(sockAddr?: string) {
 
@@ -53,7 +24,7 @@ export class Nest {
         };
 
         this._ws.onmessage = (event) => {
-            const message: NestResponse = JSON.parse(event.data);
+            const message: RecievableNestMessage = JSON.parse(event.data);
 
             this._beacon.dispatchEvent(
                 new CustomEvent('recieved', { detail: message })
@@ -77,16 +48,17 @@ export class Nest {
         return this._active;
     }
 
-    send(data: worm): void {
+    send(data: SendableNestMessage): void {
         this._ws.send(JSON.stringify(data));
     }
 
     // TODO: fix behavior to handle multiple types
-    addNestMessageProcess(type: string, callback: (message: NestResponse) => void) {
+    addNestMessageProcess(type: string, callback: (message: RecievableNestMessage) => void) {
         const eventCallback = (event: CustomEvent) => {
-            const message: NestResponse = event.detail
+            const message: RecievableNestMessage = event.detail
             callback(message)
         }
         this._beacon.addEventListener(type, eventCallback)
     }
+
 }
