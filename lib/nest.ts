@@ -1,5 +1,4 @@
-import { SendableNestMessage, RecievableNestMessage,
-         SendableNestMessageType, RecievableNestMessageType } from "./interfaces"
+import { SendableNestMessage, RecievableNestMessage } from "./interfaces"
 /**
  * API to handle communication with Velox nest
  */
@@ -25,7 +24,7 @@ export class Nest {
 
         this._ws.onmessage = (event) => {
             const message: RecievableNestMessage = JSON.parse(event.data);
-
+            console.log("Recieved: ",message)
             this._beacon.dispatchEvent(
                 new CustomEvent('recieved', { detail: message })
             );
@@ -49,8 +48,8 @@ export class Nest {
     }
 
     send(data: SendableNestMessage): void {
-        console.log("Sending Message")
-        this._ws.send(JSON.stringify(data));
+        const dta = JSON.stringify(data)
+        this._ws.send(dta);
     }
 
     // TODO: fix behavior to handle multiple types

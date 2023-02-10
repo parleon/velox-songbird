@@ -1,8 +1,7 @@
 import { RecievableNestMessage,
          RecievableNestMessageType, 
          SendableNestMessage,
-         SendableNestMessageType,
-         MessageTypeMap } from "./interfaces";
+         SendableNestMessageType } from "./interfaces";
 
 /**
  * handles webRTC channel
@@ -48,18 +47,17 @@ export class Channel {
                 this._nestConnector(msg);
             })
         } else if (message.Type == RecievableNestMessageType.Offer) {
+            this._peerUUID = message.UUID;
             this._peerConnection.setRemoteDescription(new RTCSessionDescription(message.SDPOffer));
             this._peerConnection.createAnswer().then((answer) => {
                 this._peerConnection.setLocalDescription(answer);
                 const msg: SendableNestMessage = {
-                    UUID: this._peerUUID, 
+                    UUID: this._peerUUID,
                     SDPOffer: answer,
                     Type: SendableNestMessageType.Answer
                 }
                 this._nestConnector(msg);
-            })
-        } else if (message.Type == RecievableNestMessageType.Answer) {
-                this._peerConnection.setRemoteDescription(new RTCSessionDescription(message.SDPOffer))
+
                 this._peerConnection.onicecandidate = ({candidate}) => {
                     const msg: SendableNestMessage = {
                         UUID: this._peerUUID, 
@@ -68,8 +66,19 @@ export class Channel {
                     }
                     this._nestConnector(msg);
                 }
-
+            })
+        } else if (message.Type == RecievableNestMessageType.Answer) {
+            this._peerConnection.setRemoteDescription(new RTCSessionDescription(message.SDPOffer))
+            this._peerConnection.onicecandidate = ({candidate}) => {
+                const msg: SendableNestMessage = {
+                    UUID: this._peerUUID, 
+                    Candidate: candidate,
+                    Type: SendableNestMessageType.ICE
+                }
+                this._nestConnector(msg);
+            }
         } else if (message.Type == RecievableNestMessageType.ICE) {
+         
                 this._peerConnection.addIceCandidate(message.Candidate)            
         } else {
                 console.log("default");
