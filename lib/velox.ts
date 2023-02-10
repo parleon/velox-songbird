@@ -6,15 +6,14 @@ export class Velox {
 
     private _UUID: string;
     private _nest: Nest;
-    private _pendingChannel: Channel;
-    private _activeChannels: Channel[];
+    private _activeChannels: Map<string, Channel>;
     private _beacon: EventTarget = new EventTarget();
     private _channelNestBridge: (msg: SendableNestMessage) => void 
 
     constructor(/* TODO: Add Velox options (including Nest, Channel options) */) {
 
         this._nest = new Nest(/* TODO: Add Nest options */);
-        this._activeChannels = []
+        this._activeChannels = new Map<string, Channel>();
 
         this._channelNestBridge = (msg: SendableNestMessage) => {
             if (msg.UUID == null) {
@@ -25,14 +24,12 @@ export class Velox {
 
         this._nest.addNestMessageProcess('recieved', (message) => {
             if (message.Type == RecievableNestMessageType.Initial) {
-                this._UUID = message.UUID
-                this._pendingChannel = new Channel(this._channelNestBridge);     
+                this._UUID = message.UUID   
             } else if (message.Type == RecievableNestMessageType.StartHandshake || message.Type == RecievableNestMessageType.Offer) {
+                this._activeChannels.set(message.UUID, new Channel(this._channelNestBridge));
                 this._beacon.addEventListener(message.UUID, (event: CustomEvent) => {
-                    this._pendingChannel.processNestMessage(event);
+                    this._activeChannels.get(message.UUID).processNestMessage(event);
                 })
-                this._activeChannels.push(this._pendingChannel)
-                this._pendingChannel = new Channel(this._channelNestBridge)
                 this._beacon.dispatchEvent(new CustomEvent(message.UUID, {detail: message}))
             } else if (message.UUID != null) {
                 this._beacon.dispatchEvent(new CustomEvent(message.UUID, {detail: message}))

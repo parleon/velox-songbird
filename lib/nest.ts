@@ -49,6 +49,7 @@ export class Nest {
     }
 
     send(data: SendableNestMessage): void {
+        console.log("Sending Message")
         this._ws.send(JSON.stringify(data));
     }
 

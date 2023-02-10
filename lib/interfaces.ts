@@ -1,6 +1,6 @@
 interface BaseNestMessage { 
     UUID?: string;                      // can be clients UUID or a peers UUID depending on context             // 
-    SDPOffer?: RTCSessionDescription;
+    SDPOffer?: RTCSessionDescriptionInit;
     Candidate?: RTCIceCandidate;
     Other?: string;
 }
