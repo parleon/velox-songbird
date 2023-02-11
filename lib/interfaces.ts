@@ -27,3 +27,8 @@ export enum SendableNestMessageType {
     Answer = "AN",
     ICE = "C"
 }
+
+export interface ChannelMessage {
+    Body?: any; // TODO: think about this
+    Type?: string;
+}

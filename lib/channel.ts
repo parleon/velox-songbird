@@ -1,4 +1,4 @@
-import { RecievableNestMessage,
+import { ChannelMessage, RecievableNestMessage,
          RecievableNestMessageType, 
          SendableNestMessage,
          SendableNestMessageType } from "./interfaces";
@@ -15,10 +15,9 @@ export class Channel {
     private _dataChannel: RTCDataChannel;
     private _peerUUID: string;
     private _nestConnector: (msg: SendableNestMessage) => void;
-    private _beacon: EventTarget = new EventTarget();
 
-    constructor(connectorFunc: (msg: SendableNestMessage) => void, RTCConfig?: RTCConfiguration) {
-        this._nestConnector = connectorFunc;
+    constructor(nestConnector: (msg: SendableNestMessage) => void, veloxConnector: (msg: ChannelMessage) => void, RTCConfig?: RTCConfiguration) {
+        this._nestConnector = nestConnector;
         if (RTCConfig) {
             this._peerConnection = new RTCPeerConnection(RTCConfig);
         } else {
@@ -33,12 +32,20 @@ export class Channel {
 
         this._dataChannel = this._peerConnection.createDataChannel("m");
         this._peerConnection.ondatachannel = (ev) => {
-            const receiveChannel = ev.channel;
-            receiveChannel.onmessage = (ev) => {console.log(ev.data)};
-            receiveChannel.onopen = () => {console.log("Channel Opened")};
-            receiveChannel.onclose = () => {console.log("Channel Closed")};
-            this._dataChannel = receiveChannel;
+            this._dataChannel = ev.channel;
+            this._dataChannel.onmessage = (ev) => {
+                console.log(ev.data)
+                // send message to velox using velox connector
+                //
+                // veloxConnector(/* msg */)
+            };
+            this._dataChannel.onopen = () => {console.log("Channel Opened")};
+            this._dataChannel.onclose = () => {console.log("Channel Closed")};
           }
+    }
+
+    send(msg: ChannelMessage) {
+        // send msg through data channel
     }
 
     processNestMessage(event: CustomEvent) {
