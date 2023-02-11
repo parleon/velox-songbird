@@ -30,7 +30,15 @@ export class Channel {
                 ]
             });
         }
+
         this._dataChannel = this._peerConnection.createDataChannel("m");
+        this._peerConnection.ondatachannel = (ev) => {
+            const receiveChannel = ev.channel;
+            receiveChannel.onmessage = (ev) => {console.log(ev.data)};
+            receiveChannel.onopen = () => {console.log("Channel Opened")};
+            receiveChannel.onclose = () => {console.log("Channel Closed")};
+            this._dataChannel = receiveChannel;
+          }
     }
 
     processNestMessage(event: CustomEvent) {

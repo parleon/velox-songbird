@@ -15,6 +15,7 @@ export class Velox {
         this._nest = new Nest(/* TODO: Add Nest options */);
         this._activeChannels = new Map<string, Channel>();
 
+        // function passed to a channel so it can communicate to nest
         this._channelNestBridge = (msg: SendableNestMessage) => {
             if (msg.UUID == null) {
                 msg = {...msg, UUID: this._UUID};
