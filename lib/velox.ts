@@ -52,16 +52,33 @@ export class Velox {
     }
 
     registerMessage(type: string, callback: (cm: ChannelMessage) => void) {
-
+        this._messageMap[type] = callback
     }
 
     registerDefault(callback: (cm: ChannelMessage) => void) {
-
+        this._defaultMessageCallback = callback
     }
 
     send(body?: any, type?: string, users?: string[]) {
+
         const cm: ChannelMessage = {Type:type, Body:body}
-        // if users specified, send to those users, otherwise send gloabally
+
+        // if users is undefined or empty send message globally, otherwise send to specified user(s)
+        if (users == undefined || users.length == 0) {
+            for(let [key, channel] of this._activeChannels) {
+                channel.send(cm)
+            }
+        } else {
+            for(let user of users) {
+                let channel = this._activeChannels[user]
+                channel.send(cm)
+            }
+        }
     }
+
+    // Implement send function in channel
+    // Implement onmessage in channel
+
+    // Make sure to reference blobber for our way of getting it done
 
 }
