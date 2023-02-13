@@ -76,9 +76,4 @@ export class Velox {
         }
     }
 
-    // Implement send function in channel
-    // Implement onmessage in channel
-
-    // Make sure to reference blobber for our way of getting it done
-
 }
