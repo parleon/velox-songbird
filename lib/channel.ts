@@ -33,19 +33,32 @@ export class Channel {
         this._dataChannel = this._peerConnection.createDataChannel("m");
         this._peerConnection.ondatachannel = (ev) => {
             this._dataChannel = ev.channel;
-            this._dataChannel.onmessage = (ev) => {
+            this._dataChannel.onmessage = async (ev) => {
                 console.log(ev.data)
-                // send message to velox using velox connector
-                //
-                // veloxConnector(/* msg */)
+                // Only works for message body types that can be converted to and from strings
+
+                // TODO: add some sort of type specification for encoding/decoding purposes in lines 41-41
+                const arrayBuffer = await ev.data.arrayBuffer()
+                const jsonString = new TextDecoder().decode(arrayBuffer)
+                const msg = JSON.parse(jsonString) as ChannelMessage
+                veloxConnector(msg)
             };
             this._dataChannel.onopen = () => {console.log("Channel Opened")};
             this._dataChannel.onclose = () => {console.log("Channel Closed")};
           }
     }
 
-    send(msg: ChannelMessage) {
-        // send msg through data channel
+    async send(msg: ChannelMessage) {
+        // Only works for message body types that can be converted to and from strings
+
+        // TODO: add some sort of type specification for encoding/decoding purposes in lines 52-56
+        const msgStr = JSON.stringify(msg)
+        const bytes = new TextEncoder().encode(msgStr)
+        const blob = new Blob([bytes],{
+            type: "application/json;charset=utf-8"
+        })
+        const blobData = await blob.arrayBuffer()
+        this._dataChannel.send(blobData)
     }
 
     processNestMessage(event: CustomEvent) {
