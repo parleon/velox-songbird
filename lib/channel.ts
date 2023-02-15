@@ -15,9 +15,13 @@ export class Channel {
     private _dataChannel: RTCDataChannel;
     private _peerUUID: string;
     private _nestConnector: (msg: SendableNestMessage) => void;
+    private _veloxConnector: (msg: ChannelMessage) => void;
+    private _active: boolean = false;
+
 
     constructor(nestConnector: (msg: SendableNestMessage) => void, veloxConnector: (msg: ChannelMessage) => void, RTCConfig?: RTCConfiguration) {
         this._nestConnector = nestConnector;
+        this._veloxConnector = veloxConnector;
         if (RTCConfig) {
             this._peerConnection = new RTCPeerConnection(RTCConfig);
         } else {
@@ -29,23 +33,6 @@ export class Channel {
                 ]
             });
         }
-
-        this._dataChannel = this._peerConnection.createDataChannel("m");
-        this._peerConnection.ondatachannel = (ev) => {
-            this._dataChannel = ev.channel;
-            this._dataChannel.onmessage = async (ev) => {
-                console.log(ev.data)
-                // Only works for message body types that can be converted to and from strings
-
-                // TODO: add some sort of type specification for encoding/decoding purposes in lines 41-41
-                const arrayBuffer = await ev.data.arrayBuffer()
-                const jsonString = new TextDecoder().decode(arrayBuffer)
-                const msg = JSON.parse(jsonString) as ChannelMessage
-                veloxConnector(msg)
-            };
-            this._dataChannel.onopen = () => {console.log("Channel Opened")};
-            this._dataChannel.onclose = () => {console.log("Channel Closed")};
-          }
     }
 
     async send(msg: ChannelMessage) {
@@ -64,7 +51,27 @@ export class Channel {
     processNestMessage(event: CustomEvent) {
         const message: RecievableNestMessage = event.detail;
         if (message.Type == RecievableNestMessageType.StartHandshake) {
+
             this._peerUUID = message.UUID;
+            this._dataChannel = this._peerConnection.createDataChannel("m");
+            this._dataChannel.onmessage = async (ev) => {
+                console.log(ev.data)
+                // Only works for message body types that can be converted to and from strings
+
+                // TODO: add some sort of type specification for encoding/decoding purposes in lines 41-41
+                const arrayBuffer = await ev.data.arrayBuffer() // Use .then() to get rid of async?
+                const jsonString = new TextDecoder().decode(arrayBuffer)
+                const msg = JSON.parse(jsonString) as ChannelMessage
+                this._veloxConnector(msg)
+            };
+            this._dataChannel.onopen = () => {console.log("Channel Opened")
+                this._active = true;
+                console.log(this._dataChannel);
+                const test: ChannelMessage = {Type:"Hello", Body:"World"}
+                this.send(test) 
+            };
+            this._dataChannel.onclose = () => {console.log("Channel Closed")};
+
             this._peerConnection.createOffer().then((offer) => {
                 this._peerConnection.setLocalDescription(offer);
                 const msg: SendableNestMessage = {
@@ -76,6 +83,26 @@ export class Channel {
             })
         } else if (message.Type == RecievableNestMessageType.Offer) {
             this._peerUUID = message.UUID;
+            this._peerConnection.ondatachannel = (ev) => {
+                this._dataChannel = ev.channel;
+                this._dataChannel.onmessage = async (ev) => {
+                    console.log(ev.data)
+                    // Only works for message body types that can be converted to and from strings
+    
+                    // TODO: add some sort of type specification for encoding/decoding purposes in lines 41-41
+                    const arrayBuffer = await ev.data.arrayBuffer()
+                    const jsonString = new TextDecoder().decode(arrayBuffer)
+                    const msg = JSON.parse(jsonString) as ChannelMessage
+                    this._veloxConnector(msg)
+                };
+                this._dataChannel.onopen = () => {console.log("Channel Opened")
+                    this._active = true;
+                    console.log(this._dataChannel);
+                    const test: ChannelMessage = {Type:"Hello", Body:"World"}
+                    this.send(test)   
+                };
+                this._dataChannel.onclose = () => {console.log("Channel Closed")};
+              }
             this._peerConnection.setRemoteDescription(new RTCSessionDescription(message.SDPOffer));
             this._peerConnection.createAnswer().then((answer) => {
                 this._peerConnection.setLocalDescription(answer);

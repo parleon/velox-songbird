@@ -13,9 +13,12 @@ export class Velox {
     private _defaultMessageCallback: (cm: ChannelMessage) => void
 
     constructor(/* TODO: Add Velox options (including Nest, Channel options) */) {
+        this._activeChannels = new Map<string, Channel>();
+        this._messageMap = new Map<string, (cm: ChannelMessage) => void>;
+        this._defaultMessageCallback = (cm) => {console.log(cm)}
 
         this._nest = new Nest(/* TODO: Add Nest options */);
-        this._activeChannels = new Map<string, Channel>();
+
 
         // function passed to a channel so it can communicate to nest
         this._channelNestBridge = (msg: SendableNestMessage) => {
