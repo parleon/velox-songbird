@@ -7,5 +7,22 @@
     "typescript": "^4.9.4",
     "webpack": "^5.75.0",
     "webpack-cli": "^5.0.1"
-  }
+  },
+  "name": "velox-songbird",
+  "description": "Velox Songbird provides a wrapper around webRTC optimized for communication between a large network of clients.",
+  "version": "1.0.0",
+  "main": "webpack.config.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/parleon/velox-songbird.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/parleon/velox-songbird/issues"
+  },
+  "homepage": "https://github.com/parleon/velox-songbird#readme"
 }

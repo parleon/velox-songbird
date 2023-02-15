@@ -1,6 +1,6 @@
 import { Channel } from "./channel";
 import { Nest } from "./nest";
-import { RecievableNestMessageType, SendableNestMessage } from "./interfaces";
+import { ChannelMessage, RecievableNestMessageType, SendableNestMessage } from "./interfaces";
 
 export class Velox {
 
@@ -9,11 +9,16 @@ export class Velox {
     private _activeChannels: Map<string, Channel>;
     private _beacon: EventTarget = new EventTarget();
     private _channelNestBridge: (msg: SendableNestMessage) => void 
+    private _messageMap: Map<string, (cm: ChannelMessage) => void>
+    private _defaultMessageCallback: (cm: ChannelMessage) => void
 
     constructor(/* TODO: Add Velox options (including Nest, Channel options) */) {
+        this._activeChannels = new Map<string, Channel>();
+        this._messageMap = new Map<string, (cm: ChannelMessage) => void>;
+        this._defaultMessageCallback = (cm) => {console.log(cm)}
 
         this._nest = new Nest(/* TODO: Add Nest options */);
-        this._activeChannels = new Map<string, Channel>();
+
 
         // function passed to a channel so it can communicate to nest
         this._channelNestBridge = (msg: SendableNestMessage) => {
@@ -23,11 +28,20 @@ export class Velox {
             this._nest.send(msg)    
         }
 
+        const _veloxConnector = (msg: ChannelMessage) => {
+            const fun = this._messageMap.get(msg.Type)
+            if (fun == undefined) {
+                this._defaultMessageCallback(msg)
+            } else {
+                fun(msg)
+            }
+        }
+
         this._nest.addNestMessageProcess('recieved', (message) => {
             if (message.Type == RecievableNestMessageType.Initial) {
                 this._UUID = message.UUID   
             } else if (message.Type == RecievableNestMessageType.StartHandshake || message.Type == RecievableNestMessageType.Offer) {
-                this._activeChannels.set(message.UUID, new Channel(this._channelNestBridge));
+                this._activeChannels.set(message.UUID, new Channel(this._channelNestBridge, _veloxConnector));
                 this._beacon.addEventListener(message.UUID, (event: CustomEvent) => {
                     this._activeChannels.get(message.UUID).processNestMessage(event);
                 })
@@ -40,5 +54,29 @@ export class Velox {
 
     }
 
+    registerMessage(type: string, callback: (cm: ChannelMessage) => void) {
+        this._messageMap[type] = callback
+    }
+
+    registerDefault(callback: (cm: ChannelMessage) => void) {
+        this._defaultMessageCallback = callback
+    }
+
+    send(body?: any, type?: string, users?: string[]) {
+
+        const cm: ChannelMessage = {Type:type, Body:body}
+
+        // if users is undefined or empty send message globally, otherwise send to specified user(s)
+        if (users == undefined || users.length == 0) {
+            for(let [key, channel] of this._activeChannels) {
+                channel.send(cm)
+            }
+        } else {
+            for(let user of users) {
+                let channel = this._activeChannels[user]
+                channel.send(cm)
+            }
+        }
+    }
 
 }
