@@ -12,12 +12,12 @@ export class Velox {
     private _messageMap: Map<string, (cm: ChannelMessage) => void>
     private _defaultMessageCallback: (cm: ChannelMessage) => void
 
-    constructor(/* TODO: Add Velox options (including Nest, Channel options) */) {
+    constructor(socketAddr?: string) {
         this._activeChannels = new Map<string, Channel>();
         this._messageMap = new Map<string, (cm: ChannelMessage) => void>;
         this._defaultMessageCallback = (cm) => {console.log(cm)}
 
-        this._nest = new Nest(/* TODO: Add Nest options */);
+        this._nest = new Nest(socketAddr);
 
 
         // function passed to a channel so it can communicate to nest
