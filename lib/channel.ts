@@ -54,13 +54,13 @@ export class Channel {
 
             this._peerUUID = message.UUID;
             this._dataChannel = this._peerConnection.createDataChannel("m");
+            this._dataChannel.binaryType="arraybuffer"
             this._dataChannel.onmessage = async (ev) => {
                 console.log(ev.data)
                 // Only works for message body types that can be converted to and from strings
 
                 // TODO: add some sort of type specification for encoding/decoding purposes in lines 41-41
-                const arrayBuffer = await ev.data.arrayBuffer() // Use .then() to get rid of async?
-                const jsonString = new TextDecoder().decode(arrayBuffer)
+                const jsonString = new TextDecoder().decode(ev.data)
                 const msg = JSON.parse(jsonString) as ChannelMessage
                 this._veloxConnector(msg)
             };
@@ -85,13 +85,13 @@ export class Channel {
             this._peerUUID = message.UUID;
             this._peerConnection.ondatachannel = (ev) => {
                 this._dataChannel = ev.channel;
+                this._dataChannel.binaryType="arraybuffer"
                 this._dataChannel.onmessage = async (ev) => {
                     console.log(ev.data)
                     // Only works for message body types that can be converted to and from strings
     
                     // TODO: add some sort of type specification for encoding/decoding purposes in lines 41-41
-                    const arrayBuffer = await ev.data.arrayBuffer()
-                    const jsonString = new TextDecoder().decode(arrayBuffer)
+                    const jsonString = new TextDecoder().decode(ev.data)
                     const msg = JSON.parse(jsonString) as ChannelMessage
                     this._veloxConnector(msg)
                 };

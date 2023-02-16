@@ -3,4 +3,6 @@ const config = require("./../build/config.json")
 //export default (): Velox => {
     const velox = new Velox(config.socketAddr)
     //return velox
+
+    velox.send("Hello World", "hi")
 //}
