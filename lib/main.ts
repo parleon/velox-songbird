@@ -1,8 +1,5 @@
 import { Velox } from "./velox";
-const config = require("./../build/config.json")
-//export default (): Velox => {
-    const velox = new Velox(config.socketAddr)
-    //return velox
 
-    velox.send("Hello World", "hi")
-//}
+const config = require("./../build/config.json")
+
+const velox = new Velox(config.socketAddr)

@@ -36,9 +36,6 @@ export class Channel {
     }
 
     async send(msg: ChannelMessage) {
-        // Only works for message body types that can be converted to and from strings
-
-        // TODO: add some sort of type specification for encoding/decoding purposes in lines 52-56
         const msgStr = JSON.stringify(msg)
         const bytes = new TextEncoder().encode(msgStr)
         const blob = new Blob([bytes],{
@@ -51,26 +48,26 @@ export class Channel {
     processNestMessage(event: CustomEvent) {
         const message: RecievableNestMessage = event.detail;
         if (message.Type == RecievableNestMessageType.StartHandshake) {
-
             this._peerUUID = message.UUID;
             this._dataChannel = this._peerConnection.createDataChannel("m");
             this._dataChannel.binaryType="arraybuffer"
-            this._dataChannel.onmessage = async (ev) => {
-                console.log(ev.data)
-                // Only works for message body types that can be converted to and from strings
 
-                // TODO: add some sort of type specification for encoding/decoding purposes in lines 41-41
+            this._dataChannel.onmessage = async (ev) => {
                 const jsonString = new TextDecoder().decode(ev.data)
                 const msg = JSON.parse(jsonString) as ChannelMessage
                 this._veloxConnector(msg)
             };
-            this._dataChannel.onopen = () => {console.log("Channel Opened")
+
+            this._dataChannel.onopen = () => {
+                console.log("Channel Opened")
                 this._active = true;
-                console.log(this._dataChannel);
                 const test: ChannelMessage = {Type:"Hello", Body:"World"}
                 this.send(test) 
             };
-            this._dataChannel.onclose = () => {console.log("Channel Closed")};
+
+            this._dataChannel.onclose = () => {
+                console.log("Channel Closed")
+            };
 
             this._peerConnection.createOffer().then((offer) => {
                 this._peerConnection.setLocalDescription(offer);
@@ -87,17 +84,13 @@ export class Channel {
                 this._dataChannel = ev.channel;
                 this._dataChannel.binaryType="arraybuffer"
                 this._dataChannel.onmessage = async (ev) => {
-                    console.log(ev.data)
-                    // Only works for message body types that can be converted to and from strings
-    
-                    // TODO: add some sort of type specification for encoding/decoding purposes in lines 41-41
                     const jsonString = new TextDecoder().decode(ev.data)
                     const msg = JSON.parse(jsonString) as ChannelMessage
                     this._veloxConnector(msg)
                 };
-                this._dataChannel.onopen = () => {console.log("Channel Opened")
+                this._dataChannel.onopen = () => {
+                    console.log("Channel Opened")
                     this._active = true;
-                    console.log(this._dataChannel);
                     const test: ChannelMessage = {Type:"Hello", Body:"World"}
                     this.send(test)   
                 };

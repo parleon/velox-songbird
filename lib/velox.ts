@@ -63,7 +63,6 @@ export class Velox {
     }
 
     send(body?: any, type?: string, users?: string[]) {
-
         const cm: ChannelMessage = {Type:type, Body:body}
 
         // if users is undefined or empty send message globally, otherwise send to specified user(s)

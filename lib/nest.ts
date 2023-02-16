@@ -5,7 +5,7 @@ import { SendableNestMessage, RecievableNestMessage } from "./interfaces"
 export class Nest {
     private _ws: WebSocket;
     private _active: boolean = false;
-    readonly _sockAddr: string = "ws:localhost:8080/nest";
+    readonly _sockAddr: string = "ws:45.33.74.165:80/nest";
     private _beacon: EventTarget = new EventTarget;
         
 
