@@ -1,4 +1,4 @@
-import { ChannelMessage, RecievableNestMessage,
+import { ChannelMessage, ChannelMetaUpdate, RecievableNestMessage,
          RecievableNestMessageType, 
          SendableNestMessage,
          SendableNestMessageType } from "./interfaces";
@@ -11,17 +11,20 @@ import { ChannelMessage, RecievableNestMessage,
  * recieved messages are emitted as events to the queue
  */
 export class Channel {
+
     private _peerConnection: RTCPeerConnection 
     private _dataChannel: RTCDataChannel;
     private _peerUUID: string;
-    private _nestConnector: (msg: SendableNestMessage) => void;
-    private _veloxConnector: (msg: ChannelMessage) => void;
+    private _SNMHandler: (msg: SendableNestMessage) => void;
+    private _RCMHandler: (msg: ChannelMessage) => void;
+    private _CMUHandler: (msg: ChannelMetaUpdate) => void;
     private _active: boolean = false;
 
 
-    constructor(nestConnector: (msg: SendableNestMessage) => void, veloxConnector: (msg: ChannelMessage) => void, RTCConfig?: RTCConfiguration) {
-        this._nestConnector = nestConnector;
-        this._veloxConnector = veloxConnector;
+    constructor(SNMHandler: (msg: SendableNestMessage) => void, RCMHandler: (msg: ChannelMessage) => void, CMUHandler: (msg: ChannelMetaUpdate) => void, RTCConfig?: RTCConfiguration) {
+        this._SNMHandler = SNMHandler;
+        this._RCMHandler = RCMHandler;
+        this._CMUHandler = CMUHandler;
         if (RTCConfig) {
             this._peerConnection = new RTCPeerConnection(RTCConfig);
         } else {
@@ -35,39 +38,26 @@ export class Channel {
         }
     }
 
-    async send(msg: ChannelMessage) {
+    SCMProcessor(msg: ChannelMessage) {
         const msgStr = JSON.stringify(msg)
         const bytes = new TextEncoder().encode(msgStr)
         const blob = new Blob([bytes],{
             type: "application/json;charset=utf-8"
         })
-        const blobData = await blob.arrayBuffer()
-        this._dataChannel.send(blobData)
+        blob.arrayBuffer().then((blobData) => {
+            this._dataChannel.send(blobData)
+        })
     }
 
-    processNestMessage(event: CustomEvent) {
-        const message: RecievableNestMessage = event.detail;
+    RNMProcessor(message: RecievableNestMessage) {
         if (message.Type == RecievableNestMessageType.StartHandshake) {
             this._peerUUID = message.UUID;
             this._dataChannel = this._peerConnection.createDataChannel("m");
             this._dataChannel.binaryType="arraybuffer"
 
-            this._dataChannel.onmessage = async (ev) => {
-                const jsonString = new TextDecoder().decode(ev.data)
-                const msg = JSON.parse(jsonString) as ChannelMessage
-                this._veloxConnector(msg)
-            };
-
-            this._dataChannel.onopen = () => {
-                console.log("Channel Opened")
-                this._active = true;
-                const test: ChannelMessage = {Type:"Hello", Body:"World"}
-                this.send(test) 
-            };
-
-            this._dataChannel.onclose = () => {
-                console.log("Channel Closed")
-            };
+            this._dataChannel.onmessage = (ev) => this._onmessageHandler(ev)
+            this._dataChannel.onopen = (ev) => this._onOpenHandler(ev)
+            this._dataChannel.onclose = (ev) => this._onCloseHandler(ev)
 
             this._peerConnection.createOffer().then((offer) => {
                 this._peerConnection.setLocalDescription(offer);
@@ -76,26 +66,17 @@ export class Channel {
                     SDPOffer: offer,
                     Type: SendableNestMessageType.Offer
                 }
-                this._nestConnector(msg);
+                this._SNMHandler(msg);
             })
         } else if (message.Type == RecievableNestMessageType.Offer) {
             this._peerUUID = message.UUID;
             this._peerConnection.ondatachannel = (ev) => {
                 this._dataChannel = ev.channel;
                 this._dataChannel.binaryType="arraybuffer"
-                this._dataChannel.onmessage = async (ev) => {
-                    const jsonString = new TextDecoder().decode(ev.data)
-                    const msg = JSON.parse(jsonString) as ChannelMessage
-                    this._veloxConnector(msg)
-                };
-                this._dataChannel.onopen = () => {
-                    console.log("Channel Opened")
-                    this._active = true;
-                    const test: ChannelMessage = {Type:"Hello", Body:"World"}
-                    this.send(test)   
-                };
-                this._dataChannel.onclose = () => {console.log("Channel Closed")};
-              }
+                this._dataChannel.onmessage = (ev) => this._onmessageHandler(ev)
+                this._dataChannel.onopen = (ev) => this._onOpenHandler(ev)
+                this._dataChannel.onclose = (ev) => this._onCloseHandler(ev)
+            }
             this._peerConnection.setRemoteDescription(new RTCSessionDescription(message.SDPOffer));
             this._peerConnection.createAnswer().then((answer) => {
                 this._peerConnection.setLocalDescription(answer);
@@ -104,7 +85,7 @@ export class Channel {
                     SDPOffer: answer,
                     Type: SendableNestMessageType.Answer
                 }
-                this._nestConnector(msg);
+                this._SNMHandler(msg);
 
                 this._peerConnection.onicecandidate = ({candidate}) => {
                     const msg: SendableNestMessage = {
@@ -112,7 +93,7 @@ export class Channel {
                         Candidate: candidate,
                         Type: SendableNestMessageType.ICE
                     }
-                    this._nestConnector(msg);
+                    this._SNMHandler(msg);
                 }
             })
         } else if (message.Type == RecievableNestMessageType.Answer) {
@@ -123,7 +104,7 @@ export class Channel {
                     Candidate: candidate,
                     Type: SendableNestMessageType.ICE
                 }
-                this._nestConnector(msg);
+                this._SNMHandler(msg);
             }
         } else if (message.Type == RecievableNestMessageType.ICE) {
          
@@ -133,5 +114,21 @@ export class Channel {
         }
     }
 
+    private _onOpenHandler(ev: Event) {
+        this._active = true;
+        const meta_update: ChannelMetaUpdate = {Peer: this._peerUUID, Update: "Opened"}
+        this._CMUHandler(meta_update)
+    }
+
+    private _onmessageHandler(ev: MessageEvent<any>) {
+        const jsonString = new TextDecoder().decode(ev.data)
+        const msg = JSON.parse(jsonString) as ChannelMessage
+        this._RCMHandler({...msg, UUID: this._peerUUID})
+    }
+
+    private _onCloseHandler(ev: Event) {
+        const meta_update: ChannelMetaUpdate = {Peer: this._peerUUID, Update: "Closed"}
+        this._CMUHandler(meta_update)
+    }
 
 }

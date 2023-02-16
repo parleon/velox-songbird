@@ -31,4 +31,16 @@ export enum SendableNestMessageType {
 export interface ChannelMessage {
     Body?: any; // TODO: think about this
     Type?: string;
+    UUID?: string
+}
+export interface ChannelMetaUpdate {
+    Peer?: string;
+    Update?: string;
+}
+
+export interface BeaconEvent {
+    RNM?: RecievableNestMessage
+    SNM?: SendableNestMessage
+    CM?: ChannelMessage
+    CMU?: ChannelMetaUpdate
 }

@@ -6,10 +6,8 @@ export class Nest {
     private _ws: WebSocket;
     private _active: boolean = false;
     readonly _sockAddr: string = "ws:45.33.74.165:80/nest";
-    private _beacon: EventTarget = new EventTarget;
-        
 
-    constructor(sockAddr?: string) {
+    constructor(sockAddr?: string, RNMHandler?: (message: RecievableNestMessage) => void) {
 
         if (sockAddr !== undefined) {
             this._sockAddr = sockAddr;
@@ -24,11 +22,7 @@ export class Nest {
 
         this._ws.onmessage = (event) => {
             const message: RecievableNestMessage = JSON.parse(event.data);
-            console.log("Recieved: ",message)
-            this._beacon.dispatchEvent(
-                new CustomEvent('recieved', { detail: message })
-            );
-
+            RNMHandler(message)
         };
 
         this._ws.onclose = () => {
@@ -47,18 +41,9 @@ export class Nest {
         return this._active;
     }
 
-    send(data: SendableNestMessage): void {
-        const dta = JSON.stringify(data)
+    SNMProcessor(SNM: SendableNestMessage): void {
+        const dta = JSON.stringify(SNM)
         this._ws.send(dta);
-    }
-
-    // TODO: fix behavior to handle multiple types
-    addNestMessageProcess(type: string, callback: (message: RecievableNestMessage) => void) {
-        const eventCallback = (event: CustomEvent) => {
-            const message: RecievableNestMessage = event.detail
-            callback(message)
-        }
-        this._beacon.addEventListener(type, eventCallback)
     }
 
 }
