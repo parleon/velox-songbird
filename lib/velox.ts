@@ -1,6 +1,6 @@
 import { Channel } from "./channel";
 import { Nest } from "./nest";
-import { BeaconEvent, ChannelMessage, ChannelMetaUpdate, RecievableNestMessage, RecievableNestMessageType, SendableNestMessage } from "./interfaces";
+import { BeaconEvent, ChannelMessage, ChannelMetaUpdate, RecievableNestMessage, RecievableNestMessageType, SendableNestMessage, SendableNestMessageType } from "./interfaces";
 
 export class Velox {
 
@@ -94,6 +94,16 @@ export class Velox {
 
         this._nest = new Nest(socketAddr, RNMHandler);
 
+    }
+
+    connect(networkID: string) {
+        const message: SendableNestMessage = {Type: SendableNestMessageType.Initial, Other: networkID}
+        const x = setInterval(() => {
+            if (this._nest.isActive()) {
+                this._beacon.dispatchEvent(new CustomEvent("SNM", {detail: {SNM: message}}))
+                clearInterval(x)
+            }
+        }, 10)
     }
 
     registerMessage(type: string, callback: (cm: ChannelMessage) => void) {
