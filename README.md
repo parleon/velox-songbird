@@ -4,7 +4,7 @@ STATUS: EARLY WIP
 A javascript library to simplify webRTC based communication networks.
 
 ### Our Purpose
-This library provides a wrapper around webRTC optimized for communication between a large network of clients. 
+This library provides a wrapper around webRTC optimized for datachannel communication between a large network of clients. 
 
 ### Quick Start
 ```
@@ -21,13 +21,11 @@ v.registerDefault(defaultCallback);
 // connect to a network with network-ID
 v.connect('velox-network-id');
 
-// send message to network
-v.send('msg_type', "This is a message that I have sent globally");
+// send message to network - Note: Body and Type are both optional
+v.send({Type:"msg_type", Body:"This is a message that I have sent globally"});
 
-// send default message to network
-v.sendDefault("This is a message that I have sent globally with no message type");
 
 // sent message to specific user
-v.send('msg_type', "I am sending this to a specific user", {users:{"9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d"}})
+v.send({Type:"msg_type", Body:"I am sending this to a specific user"}, ["9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d"])
 
 ```
