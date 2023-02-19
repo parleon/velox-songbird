@@ -10,8 +10,9 @@
   },
   "name": "velox-songbird",
   "description": "Velox Songbird provides a wrapper around webRTC optimized for communication between a large network of clients.",
-  "version": "1.0.0",
-  "main": "webpack.config.js",
+  "version": "1.0.12",
+  "main": "build/velox-bundle.js",
+  "types": "build/velox-bundle.d.ts",
   "directories": {
     "lib": "lib"
   },

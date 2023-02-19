@@ -4,12 +4,14 @@ const path = require('path');
 module.exports = {
   mode: "development",
   devtool: "inline-source-map",
-  entry: {
-    main: "./lib/main.ts",
-  },
+  entry: "./lib/velox.ts",
   output: {
-    path: path.resolve(__dirname, './build'),
-    filename: "velox-bundle.js" // <--- Will be compiled to this single file
+    path: path.resolve(__dirname, 'build'),
+    filename: "velox-bundle.js",
+    library: {
+      name: "Velox",
+      type: "umd"
+    }
   },
   resolve: {
     extensions: [".ts", ".tsx", ".js"],
