@@ -15,6 +15,7 @@ export class Channel {
     private _peerConnection: RTCPeerConnection 
     private _dataChannel: RTCDataChannel;
     private _peerUUID: string;
+    private _SCMQueue: ChannelMessage[] = []
     private _SNMHandler: (msg: SendableNestMessage) => void;
     private _RCMHandler: (msg: ChannelMessage) => void;
     private _CMUHandler: (msg: ChannelMetaUpdate) => void;
@@ -45,8 +46,18 @@ export class Channel {
             type: "application/json;charset=utf-8"
         })
         blob.arrayBuffer().then((blobData) => {
-            this._dataChannel.send(blobData)
+            if (this._active) {
+                this._dataChannel.send(blobData)
+            } else {
+                this._SCMQueue.push(msg)
+            }
         })
+    }
+
+    executeSCMQueue() {
+        while (this._SCMQueue.length > 0) {
+            this.SCMProcessor(this._SCMQueue.pop())
+        }
     }
 
     RNMProcessor(message: RecievableNestMessage) {
@@ -118,6 +129,7 @@ export class Channel {
         this._active = true;
         const meta_update: ChannelMetaUpdate = {Peer: this._peerUUID, Update: "Opened"}
         this._CMUHandler(meta_update)
+        this.executeSCMQueue()
     }
 
     private _onmessageHandler(ev: MessageEvent<any>) {
