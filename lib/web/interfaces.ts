@@ -1,4 +1,4 @@
-interface BaseNestMessage { 
+interface BaseNestMessage {
     UUID?: string;                      // can be clients UUID or a peers UUID depending on context             // 
     SDPOffer?: RTCSessionDescriptionInit;
     Candidate?: RTCIceCandidate;
@@ -6,7 +6,7 @@ interface BaseNestMessage {
 }
 
 export interface RecievableNestMessage extends BaseNestMessage {
-    Type?: RecievableNestMessageType;   
+    Type?: RecievableNestMessageType;
 }
 
 export interface SendableNestMessage extends BaseNestMessage {

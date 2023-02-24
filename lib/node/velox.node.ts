@@ -18,26 +18,26 @@ export class Velox {
 
         this._activeChannels = new Map<string, Channel>();
         this._messageCallbackMap = new Map<string, (cm: ChannelMessage) => void>;
-        this._defaultMessageCallback = (cm) => {console.log(cm)}
+        this._defaultMessageCallback = (cm) => { console.log(cm) }
 
         // channel uses this to emit RCM for velox to route to client
         const RCMHandler = (message: ChannelMessage) => {
-            this._beacon.emit("RCM", {CM: message})
+            this._beacon.emit("RCM", { CM: message })
         }
 
         // channel uses this to emit SNM for velox to route to nest
         const SNMHandler = (message: SendableNestMessage) => {
-            this._beacon.emit("SNM", {SNM: message})  
+            this._beacon.emit("SNM", { SNM: message })
         }
 
         // nest uses this to emit RNM for velox to route to channels
         const RNMHandler = (message: RecievableNestMessage) => {
-            this._beacon.emit("RNM", {RNM: message})
+            this._beacon.emit("RNM", { RNM: message })
         }
 
         // channel uses this to emit CMU for velox to handle or forward
         const CMUHandler = (message: ChannelMetaUpdate) => {
-            this._beacon.emit("CMU", {CMU: message})
+            this._beacon.emit("CMU", { CMU: message })
         }
 
         this._beacon.on("RNM", (event: BeaconEvent) => {
@@ -46,11 +46,11 @@ export class Velox {
 
             // initial messages are used to configure velox metadata
             if (message.Type == RecievableNestMessageType.Initial) {
-                this._UUID = message.UUID   
-            
-            // the start handshake and offer messages create new channels and binds a listener to them for RNM routing
+                this._UUID = message.UUID
+
+                // the start handshake and offer messages create new channels and binds a listener to them for RNM routing
             } else if (message.Type == RecievableNestMessageType.StartHandshake || message.Type == RecievableNestMessageType.Offer) {
-                this._activeChannels.set(message.UUID, 
+                this._activeChannels.set(message.UUID,
                     new Channel(
                         SNMHandler,
                         RCMHandler,
@@ -58,18 +58,18 @@ export class Velox {
                 this._beacon.on(message.UUID, (event: BeaconEvent) => {
                     this._activeChannels.get(message.UUID).RNMProcessor(event.RNM);
                 })
-                this._beacon.emit(message.UUID, {RNM: message})
-            
-            // all other RNM are routed accordingly
+                this._beacon.emit(message.UUID, { RNM: message })
+
+                // all other RNM are routed accordingly
             } else if (message.UUID != null) {
-                this._beacon.emit(message.UUID, {RNM: message})
+                this._beacon.emit(message.UUID, { RNM: message })
             }
         })
 
         this._beacon.on("SNM", (event: BeaconEvent) => {
             const message: SendableNestMessage = event.SNM
             if (message.UUID == null) {
-                this._nest.SNMProcessor({...message, UUID:this._UUID})
+                this._nest.SNMProcessor({ ...message, UUID: this._UUID })
             } else {
                 this._nest.SNMProcessor(message)
             }
@@ -99,10 +99,10 @@ export class Velox {
     }
 
     connect(networkID: string) {
-        const message: SendableNestMessage = {Type: SendableNestMessageType.Initial, Other: networkID}
+        const message: SendableNestMessage = { Type: SendableNestMessageType.Initial, Other: networkID }
         const x = setInterval(() => {
             if (this._nest.isActive()) {
-                this._beacon.emit("SNM", {SNM: message})
+                this._beacon.emit("SNM", { SNM: message })
                 clearInterval(x)
             }
         }, 10)
@@ -127,11 +127,11 @@ export class Velox {
     send(cm: ChannelMessage, users?: string[]) {
         // if users is undefined or empty send message globally, otherwise send to specified user(s)
         if (users == undefined || users.length == 0) {
-            for(const [key, channel] of this._activeChannels.entries()) {
+            for (const [key, channel] of this._activeChannels.entries()) {
                 channel.SCMProcessor(cm)
             }
         } else {
-            for(const user of users) {
+            for (const user of users) {
                 const channel = this._activeChannels.get(user)
                 channel.SCMProcessor(cm)
             }

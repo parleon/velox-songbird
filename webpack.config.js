@@ -23,6 +23,10 @@ const nodeConfig = {
       { 
         test: /\.tsx?$/,
         loader: "ts-loader"
+      },
+      {
+        test: /wrtc.node$/,
+        loader: "node-loader"
       }
     ]
   }
