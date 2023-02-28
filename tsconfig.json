@@ -4,7 +4,11 @@
         "rootDir": "lib",
         "module": "commonjs",
         "removeComments": true,
-        "target": "es2015"
+        "target": "es2015",
+        "declaration": true,
+        "outDir": "build"
     },
-
+    "include": [
+      "lib/**/**/*.ts"
+    ]
 }

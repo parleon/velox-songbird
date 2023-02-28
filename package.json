@@ -3,6 +3,7 @@
     "build": "webpack"
   },
   "devDependencies": {
+    "node-loader": "^2.0.0",
     "ts-loader": "^9.4.2",
     "typescript": "^4.9.4",
     "webpack": "^5.75.0",
@@ -10,8 +11,10 @@
   },
   "name": "velox-songbird",
   "description": "Velox Songbird provides a wrapper around webRTC optimized for communication between a large network of clients.",
-  "version": "1.0.0",
-  "main": "webpack.config.js",
+  "version": "1.0.35",
+  "main": "build/velox-bundle.node.js",
+  "browser": "build/velox-bundle.js",
+  "types": "build/velox-bundle.node.d.ts",
   "directories": {
     "lib": "lib"
   },
@@ -24,5 +27,11 @@
   "bugs": {
     "url": "https://github.com/parleon/velox-songbird/issues"
   },
-  "homepage": "https://github.com/parleon/velox-songbird#readme"
+  "homepage": "https://github.com/parleon/velox-songbird#readme",
+  "dependencies": {
+    "@mapbox/node-pre-gyp": "^1.0.10",
+    "events": "^3.3.0",
+    "wrtc": "^0.4.7",
+    "ws": "^8.12.1"
+  }
 }
