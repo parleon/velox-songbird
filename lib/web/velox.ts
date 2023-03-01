@@ -107,7 +107,7 @@ export class Velox {
     }
 
     registerMessage(type: string, callback: (cm: ChannelMessage) => void) {
-        this._messageCallbackMap[type] = callback
+        this._messageCallbackMap.set(type, callback)
     }
 
     registerDefault(callback: (cm: ChannelMessage) => void) {
