@@ -15,7 +15,7 @@ export class Velox {
 
     constructor(socketAddr?: string) {
         this._activeChannels = new Map<string, Channel>();
-        this._messageCallbackMap = new Map<string, (cm: ChannelMessage) => void>;
+        this._messageCallbackMap = new Map<string, (cm: ChannelMessage) => void>();
         this._defaultMessageCallback = (cm) => { console.log(cm) }
 
         // channel uses this to emit RCM for velox to route to client
