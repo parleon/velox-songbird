@@ -1,6 +1,7 @@
 import { Channel } from "./channel";
 import { Nest } from "./nest";
 import { BeaconEvent, ChannelMessage, ChannelMetaUpdate, RecievableNestMessage, RecievableNestMessageType, SendableNestMessage, SendableNestMessageType } from "./interfaces";
+import SparkMD5 = require("spark-md5");
 
 export class Velox {
 
@@ -8,6 +9,11 @@ export class Velox {
     private _nest: Nest;
     private _activeChannels: Map<string, Channel>;
     private _beacon: EventTarget = new EventTarget();
+
+    private _mountedBlobs: Map<string, ArrayBuffer> = new Map(); 
+    private _blobInfo: Map<string, {Id: string, Type: string}> = new Map();
+    private _blobRLookup: Map<string, string> = new Map();
+
     private _messageCallbackMap: Map<string, (cm: ChannelMessage) => void>
     private _defaultMessageCallback: (cm: ChannelMessage) => void
     private _onChannelOpened: (UUID: string) => void = (UUID: string) => console.log(UUID + " Opened")
@@ -38,6 +44,18 @@ export class Velox {
             this._beacon.dispatchEvent(new CustomEvent<BeaconEvent>("CMU", { detail: { CMU: message } }))
         }
 
+        const MBHandler = (message: any) => {
+            this._beacon.dispatchEvent(new CustomEvent("MB", { detail: {Hash: message.Hash}}))
+        }
+
+        this._beacon.addEventListener("MB", (event: CustomEvent) => {
+            // use hash from event
+            const h = event.detail.Hash
+            if (this._mountedBlobs.has(h) && this._blobInfo.has(h)) {
+                this._beacon.dispatchEvent(new CustomEvent("BMC", {detail: {Id: this._blobInfo.get(h).Id, Type: this._blobInfo.get(h).Type, AB: this._mountedBlobs.get(h)}}))
+            }
+        })
+
         this._beacon.addEventListener("RNM", (event: CustomEvent<BeaconEvent>) => {
 
             const message = event.detail.RNM;
@@ -52,7 +70,9 @@ export class Velox {
                     new Channel(
                         SNMHandler,
                         RCMHandler,
-                        CMUHandler));
+                        CMUHandler,
+                        MBHandler,
+                        this._mountedBlobs));
                 this._beacon.addEventListener(message.UUID, (event: CustomEvent<BeaconEvent>) => {
                     this._activeChannels.get(message.UUID).RNMProcessor(event.detail.RNM);
                 })
@@ -75,11 +95,32 @@ export class Velox {
 
         this._beacon.addEventListener("RCM", (event: CustomEvent<BeaconEvent>) => {
             const message: ChannelMessage = event.detail.CM
-            const f = this._messageCallbackMap.get(message.Type)
-            if (f == undefined) {
-                this._defaultMessageCallback(message)
+            if (message.BlobRelay != undefined) {
+                if (message.BlobRelay == "id") {
+                    if (this._blobRLookup.has(message.Body)) {
+                        const h = this._blobRLookup.get(message.Body)
+                        this.send(
+                            {BlobRelay:"h", 
+                                Body: {
+                                    Hash: h, Info: this._blobInfo.get(h)
+                                }
+                            }, [message.UUID]
+                        )
+                        this.sendBlob(h, [message.UUID])
+                    }
+                } else if (message.BlobRelay == "h") {
+                    if (!this._blobInfo.has(message.Body.Hash)) {
+                        this._blobInfo.set(message.Body.Hash, message.Body.Info)
+                    }
+                    MBHandler({Hash: message.Body.Hash})
+                }
             } else {
-                f(message)
+                const f = this._messageCallbackMap.get(message.Type)
+                if (f == undefined) {
+                    this._defaultMessageCallback(message)
+                } else {
+                    f(message)
+                }
             }
         })
 
@@ -136,4 +177,49 @@ export class Velox {
         }
     }
 
+    requestBlob(id: string, users?: string[]): Promise<Blob> {
+        this.send({BlobRelay: "id", Body:id}, users)
+        return new Promise((resolve) => {
+            this._beacon.addEventListener("BMC", (event: CustomEvent) => {
+                if (event.detail.Id == id) {
+                    const b = new Blob([event.detail.AB], {type: event.detail.Type})
+            
+                    resolve(b)
+                    this.mountBlob(id, b)
+            
+                }
+            })
+        })
+    }
+
+    mountBlob(id: string, blob: Blob) {
+        const type = blob.type
+        blob.arrayBuffer().then((ab) => {
+            const hash = hashAB(ab)
+            this._blobInfo.set(hash, {Id: id, Type: type})
+            this._mountedBlobs.set(hash, ab)
+            this._blobRLookup.set(id, hash)
+        })
+    }
+
+    sendBlob(hash: string, users?: string[]) {
+        if (this._mountedBlobs.has(hash)) {
+            const ab = this._mountedBlobs.get(hash)
+            if (users == undefined || users.length == 0) {
+                for (const [key, channel] of this._activeChannels.entries()) {
+                    channel.RawMessage(ab)
+                }
+            } else {
+                for (const user of users) {
+                    const channel = this._activeChannels.get(user)
+                    channel.RawMessage(ab)
+                }
+            }
+        }
+    }
+ 
+}
+
+export function hashAB(ab:  ArrayBuffer) {
+        return SparkMD5.ArrayBuffer.hash(ab, true)
 }

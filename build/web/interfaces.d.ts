@@ -27,6 +27,7 @@ export interface ChannelMessage {
     Body?: any;
     Type?: string;
     UUID?: string;
+    BlobRelay?: string;
 }
 export interface ChannelMetaUpdate {
     Peer?: string;

@@ -4,7 +4,7 @@ import {
     SendableNestMessage,
     SendableNestMessageType
 } from "./interfaces";
-
+import {hashAB} from "./velox"
 /**
 * handles webRTC channel
 * 
@@ -18,16 +18,20 @@ export class Channel {
     private _dataChannel: RTCDataChannel;
     private _peerUUID: string;
     private _SCMQueue: ChannelMessage[] = []
+    private _MBHandler: (msg: any) => void;
     private _SNMHandler: (msg: SendableNestMessage) => void;
     private _RCMHandler: (msg: ChannelMessage) => void;
     private _CMUHandler: (msg: ChannelMetaUpdate) => void;
+    private _BMAccess: Map<string, ArrayBuffer>;
     private _active: boolean = false;
 
 
-    constructor(SNMHandler: (msg: SendableNestMessage) => void, RCMHandler: (msg: ChannelMessage) => void, CMUHandler: (msg: ChannelMetaUpdate) => void, RTCConfig?: RTCConfiguration) {
+    constructor(SNMHandler: (msg: SendableNestMessage) => void, RCMHandler: (msg: ChannelMessage) => void, CMUHandler: (msg: ChannelMetaUpdate) => void, MBHandler: (msg: any) => void, BlobMount: Map<string, ArrayBuffer>, RTCConfig?: RTCConfiguration) {
         this._SNMHandler = SNMHandler;
         this._RCMHandler = RCMHandler;
         this._CMUHandler = CMUHandler;
+        this._MBHandler = MBHandler;
+        this._BMAccess = BlobMount;
         if (RTCConfig) {
             this._peerConnection = new RTCPeerConnection(RTCConfig);
         } else {
@@ -54,6 +58,10 @@ export class Channel {
                 this._SCMQueue.push(msg)
             }
         })
+    }
+
+    RawMessage(ab: ArrayBuffer) {
+        this._dataChannel.send(ab)
     }
 
     executeSCMQueue() {
@@ -135,9 +143,20 @@ export class Channel {
     }
 
     private _onmessageHandler(ev: MessageEvent<any>) {
+        const h = hashAB(ev.data)
+        if (!this._BMAccess.has(h)) {
+            this._BMAccess.set(h,ev.data)
+            this._MBHandler({Hash: h})
+        }
+        // decode as channel message 
+        try {
         const jsonString = new TextDecoder().decode(ev.data)
-        const msg = JSON.parse(jsonString) as ChannelMessage
+        const msg: ChannelMessage = JSON.parse(jsonString)
         this._RCMHandler({ ...msg, UUID: this._peerUUID })
+        } catch (e) {
+
+        }
+
     }
 
     private _onCloseHandler(ev: Event) {

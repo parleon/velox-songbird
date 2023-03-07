@@ -11,7 +11,7 @@
   },
   "name": "velox-songbird",
   "description": "Velox Songbird provides a wrapper around webRTC optimized for communication between a large network of clients.",
-  "version": "1.0.37",
+  "version": "1.0.52",
   "main": "build/velox-bundle.node.js",
   "browser": "build/velox-bundle.js",
   "types": "build/velox-bundle.node.d.ts",
@@ -30,6 +30,7 @@
   "homepage": "https://github.com/parleon/velox-songbird#readme",
   "dependencies": {
     "events": "^3.3.0",
+    "spark-md5": "^3.0.2",
     "ws": "^8.12.1"
   },
   "optionalDependencies": {

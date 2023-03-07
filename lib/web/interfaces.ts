@@ -31,7 +31,8 @@ export enum SendableNestMessageType {
 export interface ChannelMessage {
     Body?: any; // TODO: think about this
     Type?: string;
-    UUID?: string
+    UUID?: string;
+    BlobRelay?: string;
 }
 export interface ChannelMetaUpdate {
     Peer?: string;
